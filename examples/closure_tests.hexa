@@ -1,0 +1,49 @@
+[print "--- Closure Test Case 1: Function returning a function (adder factory) ---"]
+
+[def make-adder [fn [x]
+  [fn [y] [+ x y]]]]
+
+[def add5 [make-adder 5]]
+[def add10 [make-adder 10]]
+
+[print "add5(3) should be 8:"]
+[print [add5 3]]
+
+[print "add10(7) should be 17:"]
+[print [add10 7]]
+
+[print "--- Closure Test Case 2: Function as an argument (higher-order function) ---"]
+
+[def apply-twice [fn [f val]
+  [f [f val]]]]
+
+[def increment [fn [n] [+ n 1]]]
+
+[print "apply-twice(increment, 5) should be 7:"]
+[print [apply-twice increment 5]]
+
+[def multiplier [fn [factor]
+  [fn [n] [* n factor]]]]
+
+[def double [multiplier 2]]
+
+[print "apply-twice(double, 3) should be 12:"]
+[print [apply-twice double 3]]
+
+[print "--- Closure Test Case 3: Multi-level nested closures ---"]
+
+[def outer [fn [a]
+  [def middle [fn [b]
+    [def inner [fn [c]
+      [+ [+ a b] c]]]
+    inner]]
+  middle]]
+
+[def test-closure-stage1 [outer 10]]
+[def test-closure-stage2 [test-closure-stage1 20]]
+
+[print "test-closure-stage2(30) should be 60:"]
+[print [test-closure-stage2 30]]
+
+[print "--- End of Closure Tests ---"]
+

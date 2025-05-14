@@ -146,6 +146,6 @@ int main(int argc, char* argv[]) {
         exit(64);
     }
     
-    freeEnvironment(globalEnv);
+    releaseEnvironmentReference(globalEnv);
     return 0;
 } 

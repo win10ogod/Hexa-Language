@@ -162,7 +162,7 @@ static Value nativeGreaterThan(int argCount, Value* args) {
 }
 
 static Value defineFn(int argCount, Value* args, Environment* env) {
-    (void)env; // Silence unused parameter warning
+    // (void)env; // Silence unused parameter warning - REMOVED, env is now used
     
     if (argCount < 2) {
         runtimeError("Expected at least 2 arguments but got %d.", argCount);
@@ -176,23 +176,30 @@ static Value defineFn(int argCount, Value* args, Environment* env) {
     }
     
     int arity = args[0].as.list.count;
-    Value function = makeFunction(arity);
+    Value function_val = makeFunction(arity); // Renamed to avoid conflict with Function struct
     
+    // Capture the current environment for closure
+    function_val.as.function.captured_env = env;
+    if (env != NULL) { // The function value now holds a reference
+        env->ref_count++;
+    }
+
     // Copy parameter names
     for (int i = 0; i < arity; i++) {
         if (args[0].as.list.items[i].type != VAL_SYMBOL) {
             runtimeError("Expected parameter name.");
+            // TODO: Proper memory management for partially created function_val if error occurs
             return NIL_VAL;
         }
-        appendToList(&function.as.function.params, copyValue(args[0].as.list.items[i]));
+        appendToList(&function_val.as.function.params, copyValue(args[0].as.list.items[i]));
     }
     
     // Copy function body
     for (int i = 1; i < argCount; i++) {
-        appendToList(&function.as.function.body, copyValue(args[i]));
+        appendToList(&function_val.as.function.body, copyValue(args[i]));
     }
     
-    return function;
+    return function_val;
 }
 
 static Value defineVar(int argCount, Value* args, Environment* env) {
@@ -300,8 +307,8 @@ static Value evaluateList(Value list, Environment* env) {
             return NIL_VAL;
         }
         
-        // Create a new environment for the function execution
-        Environment* functionEnv = createEnclosedEnvironment(env);
+        // Create a new environment for the function execution, using the captured environment
+        Environment* functionEnv = createEnclosedEnvironment(function.captured_env);
         
         // Bind arguments to parameters
         for (int i = 0; i < function.arity; i++) {
@@ -309,7 +316,7 @@ static Value evaluateList(Value list, Environment* env) {
                 defineVariable(functionEnv, function.params.items[i].as.symbol, copyValue(args[i]));
             } else {
                 runtimeError("Invalid parameter name in function.");
-                freeEnvironment(functionEnv);
+                releaseEnvironmentReference(functionEnv);
                 free(args);
                 return NIL_VAL;
             }
@@ -328,8 +335,8 @@ static Value evaluateList(Value list, Environment* env) {
         // Create a copy of the result before freeing the environment
         Value resultCopy = copyValue(result);
         
-        // Free the function's environment
-        freeEnvironment(functionEnv);
+        // Release the function's execution environment
+        releaseEnvironmentReference(functionEnv);
         
         // Return the copied result
         result = resultCopy;

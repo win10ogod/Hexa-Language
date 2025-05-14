@@ -58,6 +58,7 @@ typedef struct {
     int arity;
     List body;
     List params;
+    struct Environment* captured_env; // Added for closure support
 } Function;
 
 struct Value {
@@ -107,6 +108,7 @@ typedef struct Environment {
     int capacity;
     Entry* entries;
     struct Environment* enclosing;
+    int ref_count; // Added for reference counting
 } Environment;
 
 // Function prototypes for lexer
@@ -126,7 +128,8 @@ Environment* createEnclosedEnvironment(Environment* enclosing);
 void defineVariable(Environment* env, const char* name, Value value);
 Value getVariable(Environment* env, const char* name);
 bool assignVariable(Environment* env, const char* name, Value value);
-void freeEnvironment(Environment* env);
+// void freeEnvironment(Environment* env); // Old
+void releaseEnvironmentReference(Environment* env); // New name
 void initGlobalEnvironment(Environment* env);
 
 // Error handling

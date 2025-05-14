@@ -1,4 +1,5 @@
 #include "../include/hexa.h"
+#include <string.h> // Ensure string.h is included for strlen/strcpy
 
 Value makeNumber(double num) {
     Value value;
@@ -17,14 +18,30 @@ Value makeBoolean(bool b) {
 Value makeString(const char* string) {
     Value value;
     value.type = VAL_STRING;
-    value.as.string = strdup(string);
+    char* new_string = malloc(strlen(string) + 1);
+    if (new_string == NULL) {
+        runtimeError("Memory allocation failed for string.");
+        // Ideally, handle this more gracefully, perhaps by returning an error value
+        // For now, it might lead to issues if not checked by caller, but fixes strdup issue
+        value.as.string = NULL; // Or some other indicator of failure
+        return value; // Or an error Value
+    }
+    strcpy(new_string, string);
+    value.as.string = new_string;
     return value;
 }
 
 Value makeSymbol(const char* symbol) {
     Value value;
     value.type = VAL_SYMBOL;
-    value.as.symbol = strdup(symbol);
+    char* new_symbol = malloc(strlen(symbol) + 1);
+    if (new_symbol == NULL) {
+        runtimeError("Memory allocation failed for symbol.");
+        value.as.symbol = NULL;
+        return value;
+    }
+    strcpy(new_symbol, symbol);
+    value.as.symbol = new_symbol;
     return value;
 }
 
@@ -47,6 +64,7 @@ Value makeFunction(int arity) {
     value.as.function.params.count = 0;
     value.as.function.params.capacity = 0;
     value.as.function.params.items = NULL;
+    value.as.function.captured_env = NULL; // Initialize captured_env
     return value;
 }
 
@@ -54,7 +72,7 @@ Value makeNative(NativeFn function, const char* name) {
     Value value;
     value.type = VAL_NATIVE;
     value.as.native.function = function;
-    value.as.native.name = name;
+    value.as.native.name = name; // Assuming name is a literal or managed elsewhere
     return value;
 }
 
@@ -74,6 +92,11 @@ void appendToList(List* list, Value value) {
         int oldCapacity = list->capacity;
         list->capacity = oldCapacity < 8 ? 8 : oldCapacity * 2;
         list->items = realloc(list->items, sizeof(Value) * list->capacity);
+        if (list->items == NULL && list->capacity > 0) {
+             runtimeError("Memory reallocation failed for list items.");
+             // Potentially exit or handle error more robustly
+             return;
+        }
     }
 
     list->items[list->count] = value;
@@ -92,10 +115,12 @@ void printValue(Value value) {
             printf("%g", value.as.number);
             break;
         case VAL_STRING:
-            printf("\"%s\"", value.as.string);
+            if (value.as.string) printf("\"%s\"", value.as.string);
+            else printf("\"(null string error)\"");
             break;
         case VAL_SYMBOL:
-            printf("%s", value.as.symbol);
+            if (value.as.symbol) printf("%s", value.as.symbol);
+            else printf("(null symbol error)");
             break;
         case VAL_LIST: {
             printf("[");
@@ -151,6 +176,9 @@ void freeValue(Value value) {
                 freeValue(value.as.function.body.items[i]);
             }
             freeList(&value.as.function.body);
+            if (value.as.function.captured_env != NULL) {
+                releaseEnvironmentReference(value.as.function.captured_env);
+            }
             break;
         default:
             break;
@@ -166,9 +194,9 @@ Value copyValue(Value value) {
         case VAL_NUMBER:
             return makeNumber(value.as.number);
         case VAL_STRING:
-            return makeString(value.as.string);
+            return value.as.string ? makeString(value.as.string) : (Value){VAL_STRING, {.string = NULL}};
         case VAL_SYMBOL:
-            return makeSymbol(value.as.symbol);
+            return value.as.symbol ? makeSymbol(value.as.symbol) : (Value){VAL_SYMBOL, {.symbol = NULL}};
         case VAL_LIST: {
             Value copy = makeList();
             for (int i = 0; i < value.as.list.count; i++) {
@@ -188,7 +216,10 @@ Value copyValue(Value value) {
             for (int i = 0; i < value.as.function.body.count; i++) {
                 appendToList(&copy.as.function.body, copyValue(value.as.function.body.items[i]));
             }
-            
+            copy.as.function.captured_env = value.as.function.captured_env; // Shallow copy of env pointer
+            if (copy.as.function.captured_env != NULL) {
+                copy.as.function.captured_env->ref_count++; // Increment ref_count when function is copied
+            }
             return copy;
         }
         case VAL_NATIVE:
@@ -196,6 +227,7 @@ Value copyValue(Value value) {
     }
     
     // Should never reach here
+    runtimeError("Unknown value type in copyValue: %d", value.type);
     return NIL_VAL;
 }
 
@@ -210,8 +242,12 @@ bool valuesEqual(Value a, Value b) {
         case VAL_NUMBER:
             return a.as.number == b.as.number;
         case VAL_STRING:
+            if (a.as.string == NULL && b.as.string == NULL) return true;
+            if (a.as.string == NULL || b.as.string == NULL) return false;
             return strcmp(a.as.string, b.as.string) == 0;
         case VAL_SYMBOL:
+            if (a.as.symbol == NULL && b.as.symbol == NULL) return true;
+            if (a.as.symbol == NULL || b.as.symbol == NULL) return false;
             return strcmp(a.as.symbol, b.as.symbol) == 0;
         case VAL_LIST:
             if (a.as.list.count != b.as.list.count) return false;
@@ -221,10 +257,14 @@ bool valuesEqual(Value a, Value b) {
             return true;
         case VAL_FUNCTION:
         case VAL_NATIVE:
-            // Functions and natives are only equal if they are the same object
-            return false;
+            // Functions and natives are only equal if they are the same object (pointer comparison for body/params/env)
+            // For simplicity, we'll treat distinct function objects as non-equal, even if identical code/env.
+            // A more robust equality would be complex.
+            return &a.as.function == &b.as.function; // Basic pointer compare for struct
     }
     
     // Should never reach here
+    runtimeError("Unknown value type in valuesEqual: %d", a.type);
     return false;
-} 
+}
+
