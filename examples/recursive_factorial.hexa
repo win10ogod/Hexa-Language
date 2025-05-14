@@ -1,0 +1,13 @@
+[print "Recursive factorial example"]
+
+; Define factorial function that calls itself
+[def factorial [fn [n] 
+    [if [= n 0]
+        1
+        [* n [factorial [- n 1]]]
+    ]
+]]
+
+; Calculate factorial of 5
+[print "Factorial of 5:"]
+[print [factorial 5]] 

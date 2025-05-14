@@ -1,0 +1,17 @@
+[print "Factorial example without using functions"]
+
+[def n 5]
+[def result 1]
+
+[print "Calculating factorial of"]
+[print n]
+
+; Calculate factorial using a loop, hardcoded for n=5
+[def result [* result 1]]
+[def result [* result 2]]
+[def result [* result 3]]
+[def result [* result 4]]
+[def result [* result 5]]
+
+[print "Result:"]
+[print result] 

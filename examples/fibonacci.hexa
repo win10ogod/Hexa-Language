@@ -1,0 +1,34 @@
+[print "Fibonacci sequence example"]
+
+; Define a recursive Fibonacci function
+[def fibonacci [fn [n]
+    [if [< n 2]
+        n
+        [+ [fibonacci [- n 1]] [fibonacci [- n 2]]]
+    ]
+]]
+
+; Calculate and print several Fibonacci numbers
+[print "Fibonacci(0):"]
+[print [fibonacci 0]]
+
+[print "Fibonacci(1):"]
+[print [fibonacci 1]]
+
+[print "Fibonacci(2):"]
+[print [fibonacci 2]]
+
+[print "Fibonacci(3):"]
+[print [fibonacci 3]]
+
+[print "Fibonacci(4):"]
+[print [fibonacci 4]]
+
+[print "Fibonacci(5):"]
+[print [fibonacci 5]]
+
+[print "Fibonacci(6):"]
+[print [fibonacci 6]]
+
+[print "Fibonacci(7):"]
+[print [fibonacci 7]]

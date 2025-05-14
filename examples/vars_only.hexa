@@ -1,0 +1,5 @@
+[print "Variables Example"]
+[def x 10]
+[print x]
+[def y 20]
+[print [+ x y]] 

@@ -1,0 +1,14 @@
+[print "Hello, World!"]
+
+[def greeting "Hello, Hexa!"]
+[print greeting]
+
+[def factorial [fn [n]
+  [if [= n 0]
+    1
+    [* n [factorial [- n 1]]]
+  ]
+]]
+
+[print "Factorial of 5:"]
+[print [factorial 5]]

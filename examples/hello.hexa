@@ -1,0 +1,29 @@
+[print "Hello, World!"]
+
+; Define a variable
+[def greeting "Hello, Hexa!"]
+[print greeting]
+
+; Define a function to calculate factorial
+[def factorial [fn [n]
+  [if [< n 2]
+    1
+    [* n [factorial [- n 1]]]
+  ]
+]]
+
+; Calculate and print factorial of 5
+[print "Factorial of 5:"]
+[print [factorial 5]]
+
+; Define a function to calculate Fibonacci numbers
+[def fibonacci [fn [n]
+  [if [< n 2]
+    n
+    [+ [fibonacci [- n 1]] [fibonacci [- n 2]]]
+  ]
+]]
+
+; Calculate and print Fibonacci(7)
+[print "Fibonacci 7:"]
+[print [fibonacci 7]] 

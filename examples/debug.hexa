@@ -1,0 +1,7 @@
+[print "Starting debug..."]
+
+[def test [fn [a] [+ a 1]]]
+ 
+[print "About to call function..."]
+[print [test 5]]
+[print "Function call completed."] 

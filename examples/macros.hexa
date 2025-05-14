@@ -1,0 +1,45 @@
+; Define a macro for defining functions with documentation
+[def defn [fn [name params doc body]
+  [def name [fn params body]]
+  [print "Defined function:"]
+  [print name]
+  [print "Documentation:"]
+  [print doc]
+  name
+]]
+
+; Use the macro to define a function with documentation
+[defn square 
+  [n] 
+  "Squares a number by multiplying it by itself." 
+  [* n n]
+]
+
+; Test the function
+[print "Square of 5:"]
+[print [square 5]]
+
+; Define a macro for a loop construct
+[def for [fn [init cond update body]
+  [def loop [fn [state]
+    [if cond
+      [loop update]
+      state
+    ]
+  ]]
+  [loop init]
+]]
+
+; Define a sum function using the for macro
+[def sum [fn [n]
+  [def result 0]
+  [def i 1]
+  [for i [<= i n] [+ i 1]
+    [def result [+ result i]]
+  ]
+  result
+]]
+
+; Calculate and print sum from 1 to 10
+[print "Sum from 1 to 10:"]
+[print [sum 10]] 
